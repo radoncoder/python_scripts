@@ -1,0 +1,47 @@
+import os
+import pandas as pd
+import numpy as np
+from pandas import DataFrame, Series
+from pandas_datareader import data, wb
+import re
+import glob as g
+import os.path
+
+path="D:\kallisto\SRP070710"
+file="metadataexcel.xlsx"
+
+metadf=pd.read_excel(path + "\\" + file, skiprows=44, index_col=False)
+metadf.to_excel("D:\kallisto\SRP070710\metadataexcel.xlsx")
+metadf=metadf.transpose().reset_index()
+originalmeta=pd.read_table(path+"\SRP070710_meta.txt")
+originalmeta.loc[-1]="!Sample_title"
+originalmeta=originalmeta.sort_index().reset_index(drop=True)
+originalmeta["sample"]
+metadf[54]=originalmeta["sample"]
+
+kallisto_meta=pd.read_excel("D:\kallisto\SRP070710\metadataexcel.xlsx", skiprows=1,)
+kallisto_meta=kallisto_meta.loc[0:,("!Sample_title.1","!Sample_title","!Sample_source_name_ch1")]
+
+def add_column(dataframe=kallisto_meta):
+    index=0
+    p=re.compile("Partial|Complete")
+    while index <len(dataframe):
+        if p.search(dataframe.loc[index, "!Sample_source_name_ch1"]) == None:
+            dataframe.loc[index,"simplified_response"]="progressive"    
+            index+=1
+        else:
+            dataframe.loc[index,"simplified_response"]="responded"
+            index+=1
+    return dataframe
+
+kallisto_meta=add_column()
+kallisto_meta = kallisto_meta.rename(columns={"!Sample_title.1":"sample","!Sample_title":"patient_id","!Sample_source_name_ch1":"tumor_response","simplified_response":"condition"})
+kallisto_meta["tumor_response"].replace(to_replace="\w*\s\w*_", value= "", regex=True, inplace=True)
+kallisto_meta["tumor_response"].replace("\s", "_", regex=True,inplace=True)
+#Used regular expressions to search for partial OR complete in the column.  If no match, then progressive, if match, then responded
+#Note the use of length for the index because in this table index started at 1
+#So now we have our new meta-data.  Rename the columns to not be so bulky (dictionary style)
+#Write this to an excel file and run sleuth again.
+#when we have our new data we will re-evaluate the genes and tpm counts. which should run as above.
+
+kallisto_meta.to_csv(path+"\kallisto_meta.csv")
