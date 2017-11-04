@@ -1,0 +1,33 @@
+import os
+import pandas as pd
+import numpy as np
+from pandas import DataFrame, Series
+from pandas_datareader import data, wb
+import re
+
+#standard imports as well as "re" for regex and "os" to maniuplate the directory location.
+
+def period_remover(dataframe): 
+    df=dataframe
+    df.loc[:,"target_id"]=df.loc[:, "target_id"].replace(regex=True, to_replace=r"[.]\d*", value="")
+    #If you didn't use the [.] it would replace everything because "." is a catch-all.
+    return df
+
+def expression_frame(patient_ids_from_tpm_dataframe,tpm_counts_df):
+    iplist=0
+    ptid=patient_ids_from_tpm_dataframe
+    tpmdf=tpm_counts_df
+    df=pd.DataFrame(index=hgncid)
+    while iplist<=len(ptid)-1:
+        t=tpmdf.loc[tpmdf["sample"] == ptid[iplist]].sort_values(by=["tpm","ext_gene","sample"], ascending=False, kind="mergesort").drop_duplicates("ext_gene")
+        t=t.pivot(columns="sample", index="ext_gene", values="tpm")
+        df=df.join(t)
+        iplist+=1
+    return df
+
+#By sorting by tpm values , all the highest values are at the "top" of the frame
+#Then organize by ext_gene (which is the hugo-ID) and then the sample name (which is the patient samples)
+#When removing duplicates it takes only the first unique entity it sees, thereby reducing a gene per sample to a single tpm value.
+#"mergesort" is the only stable sorting algorithm at this time.
+#The use of a pivot table essentially creates the expression table.
+#The .join function adds to the dataframe a column at a time.
