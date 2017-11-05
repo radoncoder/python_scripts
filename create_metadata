@@ -27,7 +27,7 @@ def add_column(dataframe=kallisto_meta):
     p=re.compile("Partial|Complete")
     while index <len(dataframe):
         if p.search(dataframe.loc[index, "!Sample_source_name_ch1"]) == None:
-            dataframe.loc[index,"simplified_response"]="progressive"    
+            dataframe.loc[index,"simplified_response"]="progressive"
             index+=1
         else:
             dataframe.loc[index,"simplified_response"]="responded"
@@ -45,3 +45,4 @@ kallisto_meta["tumor_response"].replace("\s", "_", regex=True,inplace=True)
 #when we have our new data we will re-evaluate the genes and tpm counts. which should run as above.
 
 kallisto_meta.to_csv(path+"\kallisto_meta.csv")
+#testing github
